@@ -52,6 +52,7 @@ button.on{background:#ffb703;color:#2b2d42}
 .out small{font-weight:700;opacity:.8}
 .conf{position:fixed;top:-30px;font-size:26px;z-index:200;pointer-events:none;animation:fall 2.8s linear forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+.sys{font-size:calc(var(--k)*.26)!important}body.l4{--k:clamp(20px,4.9vw,40px)}.row.f{margin-bottom:calc(var(--k)*.3)}.gap{width:calc(var(--k)*.5)}
 @keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 @keyframes pop{0%{transform:scale(1.4)}100%{transform:scale(1)}}
 @keyframes bob{50%{transform:translateY(-6px) rotate(4deg)}}
@@ -62,7 +63,7 @@ button.on{background:#ffb703;color:#2b2d42}
 <header><div class="bot">🤖</div><div class="bubble" id="msg"></div></header>
 <h1>⌨️ Збери клавіатуру</h1>
 <div class="bar">
-<button data-lv="1" class="on">1 ряд</button><button data-lv="2">2 ряди</button><button data-lv="3">3 ряди</button>
+<button data-lv="1" class="on">1 ряд</button><button data-lv="2">2 ряди</button><button data-lv="3">3 ряди</button><button data-lv="4">⌨️ 100%</button>
 <button id="hintBtn" class="on">💡 Підказки</button><button id="reset">🔄 Заново</button>
 <div class="stat" id="stat">0 / 0</div>
 </div>
@@ -86,7 +87,31 @@ let level=1,placed=0,total=0,mistakes=0,done=false,drag=null,ac;
 const say=t=>$('msg').textContent=t;
 function beep(f,d=.12,type='sine'){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
 function mkKey(k,c){const e=document.createElement('div');e.className='key'+(k===' '?' wide':'');e.dataset.k=k;e.style.setProperty('--c',c);e.textContent=k===' '?'ПРОБІЛ':k;return e}
-function build(){
+function build4(){
+done=false;placed=0;mistakes=0;$('app').classList.remove('done');$('text').textContent='';
+const rows=$('rows'),tray=$('tray');rows.innerHTML='';tray.innerHTML='';
+const S='#cfd8e3',keys=[];
+const Ls=(str,w=1)=>[...str].map((c,i)=>[c,COL[FING[i]],w]);
+const num=['`','1','2','3','4','5','6','7','8','9','0','-','='].map((c,i)=>[c,COL[FING[Math.max(i-1,0)]],1]);
+const R=[
+{c:'f',k:[['Esc',S,1],...[...Array(12)].map((_,i)=>['F'+(i+1),S,1])]},
+{k:[...num,['Backspace',S,2]]},
+{k:[['Tab',S,1.5],...Ls('ЙЦУКЕНГШЩЗХЇ'),['Ґ',COL[7],1]]},
+{k:[['Caps Lock',S,1.8],...Ls('ФІВАПРОЛДЖЄ'),['Enter',S,2.2]]},
+{k:[['Shift',S,2.3],...Ls('ЯЧСМИТЬБЮ'),['.',COL[7],1],['Shift',S,2.7]]},
+{k:[['Ctrl',S,1.4],['Alt',S,1.4],[' ','#e0e1dd',5.2],['Alt',S,1.4],['Ctrl',S,1.4],'gap',['←',S,1],['↑',S,1],['↓',S,1],['→',S,1]]}
+];
+const mk=(k,c,w)=>{const e=mkKey(k,c);e.classList.remove('wide');e.style.width='calc(var(--k)*'+w+')';if(k.length>1)e.classList.add('sys');return e};
+R.forEach(rw=>{const r=document.createElement('div');r.className='row '+(rw.c||'');
+rw.k.forEach(x=>{if(x==='gap'){const g=document.createElement('div');g.className='gap';r.appendChild(g);return}
+const s=document.createElement('div');s.className='slot';s.dataset.k=x[0];s.style.width='calc(var(--k)*'+x[2]+')';
+s.innerHTML='<span class="hint'+(x[0].length>1?' sys':'')+'">'+(x[0]===' '?'ПРОБІЛ':x[0])+'</span>';r.appendChild(s);keys.push(mk(...x))});
+rows.appendChild(r)});
+total=keys.length;
+keys.sort(()=>Math.random()-.5).forEach(k=>tray.appendChild(k));
+upd();say('Повна клавіатура! Є літери, цифри та системні клавіші. Ти впораєшся! 💪');
+}
+function build(){document.body.classList.toggle('l4',level===4);if(level===4)return build4();
 done=false;placed=0;mistakes=0;$('app').classList.remove('done');$('text').textContent='';
 const rows=$('rows'),tray=$('tray');rows.innerHTML='';tray.innerHTML='';
 const keys=[];
@@ -141,14 +166,14 @@ c.style.left=Math.random()*100+'vw';c.style.animationDelay=Math.random()*1.2+'s'
 function press(k){
 const el=document.querySelector('.slot[data-k="'+k+'"] .key');if(!el)return;
 el.classList.add('press');setTimeout(()=>el.classList.remove('press'),140);
-$('text').textContent+=k;beep(400+Math.random()*300,.06);
+const t=$('text');if(k==='Backspace')t.textContent=t.textContent.slice(0,-1);else if(k==='Enter')t.textContent+='↵ ';else if(k.length===1||k===' ')t.textContent+=k;beep(400+Math.random()*300,.06);return true;
 }
 document.addEventListener('click',e=>{const k=e.target.closest('.slot .key');if(done&&k)press(k.dataset.k)});
 document.addEventListener('keydown',e=>{
 if(!done)return;
-if(e.key==='Backspace'){$('text').textContent=$('text').textContent.slice(0,-1);return}
-if(e.key===' '){e.preventDefault();press(' ');return}
-if(e.key.length===1)press(e.key.toUpperCase());
+const MAP={Escape:'Esc',CapsLock:'Caps Lock',Control:'Ctrl',ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓'};let k=MAP[e.key]||e.key;if(k.length===1)k=k.toUpperCase();if(press(k))e.preventDefault();
+
+
 });
 document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
 level=+b.dataset.lv;document.querySelectorAll('[data-lv]').forEach(x=>x.classList.toggle('on',x===b));build()});
