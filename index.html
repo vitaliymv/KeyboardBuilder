@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Збери клавіатуру</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#bde0fe;--bg2:#ffd6e8;--card:#ffffffd9;--ink:#2b2d42;--plate1:#4a4e69;--plate2:#2f3250;--k:clamp(26px,6.4vw,54px);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#1d2b53;--bg2:#3a1f4a;--card:#252846d9;--ink:#f1f1f8}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;font-family:'Nunito','Trebuchet MS',sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed;user-select:none;-webkit-user-select:none}
+.app{max-width:900px;margin:0 auto;padding:14px 12px 40px}
+h1{margin:0;font-size:clamp(22px,4.5vw,34px);font-weight:900}
+header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.bot{font-size:clamp(40px,9vw,64px);animation:bob 2.4s ease-in-out infinite}
+.bubble{background:var(--card);border-radius:18px;padding:10px 14px;font-weight:800;flex:1;position:relative;box-shadow:0 4px 14px #0002}
+.bubble:before{content:"";position:absolute;left:-8px;top:50%;margin-top:-8px;border:8px solid transparent;border-left:0;border-right-color:var(--card)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+button{font:inherit;font-weight:800;border:0;border-radius:14px;padding:9px 14px;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 #0003}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 #0003}
+button.on{background:#ffb703;color:#2b2d42}
+.stat{margin-left:auto;font-weight:900;background:var(--card);padding:8px 14px;border-radius:14px}
+.progress{height:14px;background:var(--card);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7bdc9a,#ffe066,#ff8fab);transition:width .4s}
+.board{background:linear-gradient(180deg,var(--plate1),var(--plate2));border-radius:22px;padding:calc(var(--k)*.45);box-shadow:0 10px 0 #1c1e33,0 18px 30px #0004;overflow-x:auto}
+.rows{width:max-content;margin:0 auto;display:flex;flex-direction:column;gap:calc(var(--k)*.12)}
+.row{display:flex;gap:calc(var(--k)*.12)}
+.row.r1{margin-left:calc(var(--k)*.45)}.row.r2{margin-left:calc(var(--k)*.9)}
+.row.sp{justify-content:center;margin-left:calc(var(--k)*1.4)}
+.slot{width:var(--k);height:var(--k);border:2px dashed #ffffff55;border-radius:calc(var(--k)*.2);display:grid;place-items:center;background:#ffffff14;transition:background .2s}
+.slot.wide{width:calc(var(--k)*6)}
+.slot .hint{font-weight:900;font-size:calc(var(--k)*.4);color:#ffffff55}
+.nohint .slot .hint{display:none}
+.slot.ok{border-color:transparent;background:transparent}
+.slot.ok .hint{display:none}
+.key{width:var(--k);height:var(--k);border-radius:calc(var(--k)*.2);background:var(--c);color:#2b2d42;font-weight:900;font-size:calc(var(--k)*.45);display:grid;place-items:center;box-shadow:0 calc(var(--k)*.08) 0 #0004,inset 0 2px 0 #fff8;cursor:grab;touch-action:none;transition:transform .12s}
+.key.wide{width:calc(var(--k)*6);font-size:calc(var(--k)*.32)}
+.key.drag{position:fixed;z-index:99;pointer-events:none;transform:scale(1.18) rotate(-4deg);box-shadow:0 14px 20px #0006;cursor:grabbing}
+.key.shake{animation:shake .4s}
+.slot .key{cursor:default;animation:pop .35s}
+.done .slot .key{cursor:pointer}
+.key.press{transform:translateY(4px) scale(.94);filter:brightness(1.15)}
+.tray{margin-top:16px;min-height:calc(var(--k)*2.6);background:var(--card);border-radius:20px;padding:12px;display:flex;flex-wrap:wrap;gap:calc(var(--k)*.16);justify-content:center;align-content:flex-start;box-shadow:inset 0 3px 8px #0002}
+.tray:empty:after{content:"Усі клавіші на місці! 🎉";font-weight:900;align-self:center}
+.out{display:none;margin-top:16px;background:var(--card);border-radius:20px;padding:14px}
+.done .out{display:block}
+.out .stars{font-size:30px}
+.out .text{min-height:48px;margin-top:8px;font-size:26px;font-weight:900;word-break:break-all;border-bottom:3px dashed #8d99ae;letter-spacing:2px}
+.out small{font-weight:700;opacity:.8}
+.conf{position:fixed;top:-30px;font-size:26px;z-index:200;pointer-events:none;animation:fall 2.8s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes pop{0%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes bob{50%{transform:translateY(-6px) rotate(4deg)}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header><div class="bot">🤖</div><div class="bubble" id="msg"></div></header>
+<h1>⌨️ Збери клавіатуру</h1>
+<div class="bar">
+<button data-lv="1" class="on">1 ряд</button><button data-lv="2">2 ряди</button><button data-lv="3">3 ряди</button>
+<button id="hintBtn" class="on">💡 Підказки</button><button id="reset">🔄 Заново</button>
+<div class="stat" id="stat">0 / 0</div>
+</div>
+<div class="progress"><i id="prog"></i></div>
+<div class="board"><div class="rows" id="rows"></div></div>
+<div class="tray" id="tray"></div>
+<div class="out" id="out">
+<div class="stars" id="stars"></div>
+<div><b>Клавіатура працює!</b> Тисни клавіші на екрані або на справжній клавіатурі.</div>
+<div class="text" id="text"></div>
+<small>Кольори показують, яким пальцем натискати.</small>
+</div>
+</div>
+<script>
+const ROWS=["ЙЦУКЕНГШЩЗХЇ","ФІВАПРОЛДЖЄ","ЯЧСМИТЬБЮ"];
+const FING=[0,1,2,3,3,4,4,5,6,7,7,7];
+const COL=['#ff8fab','#ffb86b','#ffe066','#7bdc9a','#6fd3e8','#8fa8ff','#c79bff','#ff9de2'];
+const LV={1:[1],2:[1,2],3:[0,1,2]};
+const $=id=>document.getElementById(id);
+let level=1,placed=0,total=0,mistakes=0,done=false,drag=null,ac;
+const say=t=>$('msg').textContent=t;
+function beep(f,d=.12,type='sine'){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
+function mkKey(k,c){const e=document.createElement('div');e.className='key'+(k===' '?' wide':'');e.dataset.k=k;e.style.setProperty('--c',c);e.textContent=k===' '?'ПРОБІЛ':k;return e}
+function build(){
+done=false;placed=0;mistakes=0;$('app').classList.remove('done');$('text').textContent='';
+const rows=$('rows'),tray=$('tray');rows.innerHTML='';tray.innerHTML='';
+const keys=[];
+LV[level].forEach(ri=>{
+const r=document.createElement('div');r.className='row r'+ri;
+[...ROWS[ri]].forEach((ch,i)=>{
+const c=COL[FING[i]];const s=document.createElement('div');s.className='slot';s.dataset.k=ch;
+s.innerHTML='<span class="hint">'+ch+'</span>';r.appendChild(s);keys.push(mkKey(ch,c))});
+rows.appendChild(r)});
+const sp=document.createElement('div');sp.className='row sp';
+sp.innerHTML='<div class="slot wide" data-k=" "><span class="hint">ПРОБІЛ</span></div>';rows.appendChild(sp);
+keys.push(mkKey(' ','#e0e1dd'));
+total=keys.length;
+keys.sort(()=>Math.random()-.5).forEach(k=>tray.appendChild(k));
+upd();say('Привіт! Перетягни кожну клавішу на її місце. Почнімо! 🚀');
+}
+function upd(){$('stat').textContent=placed+' / '+total;$('prog').style.width=(total?placed/total*100:0)+'%'}
+document.addEventListener('pointerdown',e=>{
+const key=e.target.closest('.key');if(!key||done||key.parentNode.classList.contains('slot'))return;
+e.preventDefault();const r=key.getBoundingClientRect();
+drag={key,home:key.parentNode,next:key.nextSibling,dx:e.clientX-r.left,dy:e.clientY-r.top};
+key.classList.add('drag');mv(e);beep(520,.05);
+});
+function mv(e){if(!drag)return;drag.key.style.left=(e.clientX-drag.dx)+'px';drag.key.style.top=(e.clientY-drag.dy)+'px'}
+document.addEventListener('pointermove',mv);
+function drop(e){
+if(!drag)return;const {key,home,next}=drag;drag=null;
+const slot=document.elementFromPoint(e.clientX,e.clientY)?.closest('.slot');
+key.classList.remove('drag');key.style.left=key.style.top='';
+if(slot&&!slot.querySelector('.key')&&slot.dataset.k===key.dataset.k){
+slot.appendChild(key);slot.classList.add('ok');placed++;upd();beep(660,.1);setTimeout(()=>beep(880,.12),90);
+const ok=['Чудово! 👏','Так тримати! ⭐','Супер! 🎯','Вірно! 😄','Молодець! 💪'];
+say(ok[Math.floor(Math.random()*ok.length)]);
+if(placed===total)finish();
+}else{
+home.insertBefore(key,next&&next.parentNode===home?next:null);
+key.classList.remove('shake');void key.offsetWidth;key.classList.add('shake');
+if(slot&&slot.classList.contains('slot')&&!slot.classList.contains('ok')){mistakes++;say('Ой, не туди! Спробуй ще раз 🤔')}
+beep(180,.18,'square');
+}}
+document.addEventListener('pointerup',drop);
+document.addEventListener('pointercancel',drop);
+function finish(){
+done=true;$('app').classList.add('done');
+const s=mistakes<=2?3:mistakes<=6?2:1;$('stars').textContent='⭐'.repeat(s)+'☆'.repeat(3-s);
+say('Ура! Клавіатуру зібрано! 🎉 Помилок: '+mistakes);
+[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2),i*140));
+const em=['🎉','⭐','✨','🎈','💖','🌈'];
+for(let i=0;i<45;i++){const c=document.createElement('span');c.className='conf';c.textContent=em[i%em.length];
+c.style.left=Math.random()*100+'vw';c.style.animationDelay=Math.random()*1.2+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4500)}
+}
+function press(k){
+const el=document.querySelector('.slot[data-k="'+k+'"] .key');if(!el)return;
+el.classList.add('press');setTimeout(()=>el.classList.remove('press'),140);
+$('text').textContent+=k;beep(400+Math.random()*300,.06);
+}
+document.addEventListener('click',e=>{const k=e.target.closest('.slot .key');if(done&&k)press(k.dataset.k)});
+document.addEventListener('keydown',e=>{
+if(!done)return;
+if(e.key==='Backspace'){$('text').textContent=$('text').textContent.slice(0,-1);return}
+if(e.key===' '){e.preventDefault();press(' ');return}
+if(e.key.length===1)press(e.key.toUpperCase());
+});
+document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
+level=+b.dataset.lv;document.querySelectorAll('[data-lv]').forEach(x=>x.classList.toggle('on',x===b));build()});
+$('reset').onclick=build;
+$('hintBtn').onclick=e=>{document.body.classList.toggle('nohint');e.currentTarget.classList.toggle('on')};
+build();
+</script>
+</body>
+</html>
